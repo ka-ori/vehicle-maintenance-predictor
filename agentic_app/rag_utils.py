@@ -193,25 +193,157 @@ MAINTENANCE_DOCS = [
 
 
 # ---------------------------------------------------------------------------
+# Risk Modifier Knowledge Base (for extra info not in the ML model)
+# ---------------------------------------------------------------------------
+
+RISK_MODIFIER_DOCS = [
+    """DRIVING CONDITIONS — RISK MODIFIERS
+    Driving conditions significantly affect vehicle wear and maintenance needs beyond
+    what standard telemetry captures:
+    - Off-road or unpaved roads: +25% maintenance frequency. Increases wear on
+      suspension, tires, undercarriage. Dust ingestion clogs air filters faster.
+    - Mountain/hill driving: +20% brake wear, +15% transmission stress. Frequent
+      elevation changes strain cooling system and brakes.
+    - Stop-and-go city traffic: +30% brake wear, +20% transmission wear vs highway.
+      Increases fuel consumption by 20-40%. Battery works harder with frequent starts.
+    - Highway/long-distance: Lower brake wear but higher tire and engine hour wear.
+      Generally less stressful on drivetrain.
+    - Towing/heavy loads: +30-50% wear on transmission, brakes, tires, and engine.
+      Requires shorter service intervals across all systems.
+    Risk adjustment: For harsh conditions, multiply base risk by 1.2-1.5x.""",
+
+    """CLIMATE AND WEATHER — RISK MODIFIERS
+    Environmental conditions impact vehicle degradation rates:
+    - Extreme heat (>40C regularly): Battery life reduced by 30-50%. Tire blowout
+      risk increases. Cooling system under greater stress. AC compressor wear.
+    - Extreme cold (<-10C regularly): Battery capacity drops 30-60%. Oil thickens,
+      increasing engine wear on cold starts. Rust from road salt exposure.
+    - High humidity/coastal: Accelerated corrosion and rust. Electrical system
+      moisture damage. Mold risk in cabin. Brake rotor surface rust.
+    - Heavy rain/flooding areas: Water ingestion risk. Hydroplaning risk with worn
+      tires. Electrical shorts. Rust on undercarriage.
+    - Dusty/sandy environments: Air filter clogging 2-3x faster. Paint and windshield
+      abrasion. Seal degradation. Requires frequent cleaning.
+    Risk adjustment: Extreme climate adds +15-30% to base maintenance risk.""",
+
+    """ACCIDENT SEVERITY — RISK MODIFIERS
+    Not all accidents are equal in terms of ongoing maintenance impact:
+    - Minor fender bender (cosmetic): Minimal ongoing risk (+5%). Check alignment.
+    - Moderate collision (structural): +25% ongoing risk. Frame damage may cause
+      progressive alignment, tire, and suspension issues even after repair.
+    - Major/severe accident (airbag deployment): +40-60% ongoing risk. Hidden
+      structural damage, electrical system compromise, fluid system integrity.
+      Vehicle should be thoroughly inspected even if repaired.
+    - Flood damage: +50% risk. Electrical corrosion is progressive and may not
+      manifest immediately. Mold in hidden cavities. Mechanical contamination.
+    - Rollover: +40% risk. Roof structural integrity, glass seal integrity,
+      fluid system contamination, suspension geometry.
+    Risk adjustment: Recent severe accident adds 0.3-0.6 to probability score.""",
+
+    """USAGE PATTERNS — RISK MODIFIERS
+    How a vehicle is used affects wear patterns beyond simple mileage:
+    - Commercial delivery (frequent stops): +25% drivetrain wear. Door hinges,
+      cabin entry points wear faster. Higher idle hours.
+    - Ride-sharing/taxi: +30% interior wear, suspension, brakes. High idle time.
+      More frequent fluid changes needed.
+    - Construction site use: +40% wear on suspension, tires, air filters.
+      Vibration damage to electronics. Stone chip damage.
+    - Emergency vehicle: High-stress driving patterns, rapid acceleration/braking.
+      +35% drivetrain wear despite potentially lower mileage.
+    - School bus: Frequent stops, door mechanisms, safety systems critical.
+      +20% brake wear. Regular safety inspections mandatory.
+    - Long-term parked (>30 days): Flat spots on tires, battery discharge,
+      fuel degradation, seal dry-out, pest damage risk.
+    Risk adjustment: High-stress usage adds +20-40% to base risk.""",
+
+    """MODIFICATION AND AFTERMARKET — RISK MODIFIERS
+    Vehicle modifications can significantly affect reliability and maintenance:
+    - Lift kit/suspension modification: Changes center of gravity, affects handling.
+      Increased CV joint angles, accelerated wear. +20% suspension maintenance.
+    - Engine tuning/chip: Increased power stresses drivetrain. May void warranty.
+      +15-25% engine maintenance. Cooling system may be inadequate.
+    - Aftermarket exhaust: May affect back-pressure and engine tuning. Emissions
+      compliance risk. Generally low maintenance impact if properly done.
+    - Oversized tires: Speedometer inaccuracy, increased drivetrain stress,
+      reduced fuel efficiency. +15% tire and suspension wear.
+    - Aftermarket electrical (lights, audio, accessories): Increased battery draw,
+      potential wiring fire risk if poorly installed. +10% electrical system risk.
+    - Non-OEM parts: Quality varies widely. May not fit precisely, causing
+      accelerated wear on mating components. Warranty implications.
+    Risk adjustment: Significant modifications add +10-25% to base risk.""",
+
+    """DRIVER BEHAVIOR — RISK MODIFIERS
+    Driver habits have a major impact on vehicle wear:
+    - Aggressive driving (hard acceleration/braking): +30-40% brake wear,
+      +25% tire wear, +20% fuel consumption. Transmission shock loading.
+    - Riding the clutch (manual): Premature clutch wear, can cost $1000-2500
+      to replace. +50% clutch system maintenance.
+    - Ignoring warning lights: Cascading damage — a $50 sensor fix becomes a
+      $3000 engine repair. Dramatically increases catastrophic failure risk.
+    - Overloading vehicle: Exceeding GVWR stresses every system — suspension,
+      brakes, tires, engine, transmission. +30-50% wear across the board.
+    - Skipping warm-up in cold weather: Increased engine wear due to poor
+      lubrication. Modern engines need 30-60 seconds, not extended idling.
+    - Fuel quality (low-grade or contaminated): Injector clogging, fuel system
+      corrosion, reduced efficiency. +10-15% engine maintenance.
+    Risk adjustment: Poor driving habits add +20-40% to base risk.""",
+
+    """FLUID LEAKS AND WARNING SIGNS — RISK MODIFIERS
+    Active symptoms reported by the user should significantly elevate risk:
+    - Oil leak (spots under vehicle): +30% engine risk. Monitor level frequently.
+      Small leak can become catastrophic if oil runs low.
+    - Coolant leak (sweet smell, green/orange fluid): +40% overheating risk.
+      Can lead to head gasket failure ($2000+).
+    - Transmission fluid leak (red/brown): +35% transmission risk. Low fluid
+      causes overheating and gear damage.
+    - Brake fluid leak: CRITICAL — +80% brake failure risk. Vehicle should not
+      be driven. Immediate repair required.
+    - Unusual noises (knocking, squealing, grinding): +25% component failure risk.
+      Noise indicates active mechanical degradation.
+    - Vibration at speed: +20% risk. Could be wheel balance, warped rotors,
+      CV joint, or driveshaft issue.
+    - Check engine light on: +15-30% risk depending on code. Should be diagnosed.
+    Risk adjustment: Active symptoms add 0.15-0.8 to probability depending on severity.""",
+
+    """VEHICLE BRAND RELIABILITY — RISK MODIFIERS
+    Different manufacturers have varying reliability track records:
+    - Japanese manufacturers (Toyota, Honda, Suzuki): Generally higher reliability,
+      lower maintenance costs. -10% risk modifier.
+    - Korean manufacturers (Hyundai, Kia): Good reliability in recent models (2018+),
+      older models may have higher maintenance. Neutral to -5%.
+    - European manufacturers (BMW, Mercedes, Audi, VW): Higher performance but
+      also higher maintenance costs and complexity. +10-20% risk and cost.
+    - American manufacturers (Ford, GM, Jeep): Variable by model. Trucks generally
+      reliable. Some models have known issues. Neutral to +10%.
+    - Chinese manufacturers: Rapidly improving but less long-term reliability data.
+      Parts availability may be limited. +10-15% risk.
+    - Luxury/performance variants: Higher maintenance cost due to specialized parts
+      and labor. Premium fluids and consumables required. +15-25% cost modifier.
+    Risk adjustment: Brand reliability modifies base risk by -10% to +25%.""",
+]
+
+
+# ---------------------------------------------------------------------------
 # RAG pipeline
 # ---------------------------------------------------------------------------
 
-_rag_instance = None
+_maintenance_rag = None
+_modifier_rag = None
 
 
 class MaintenanceRAG:
     """FAISS-backed retrieval of maintenance guidelines."""
 
-    def __init__(self):
+    def __init__(self, docs: list[str], prefix: str = "guideline"):
         self.embeddings = HuggingFaceEmbeddings(
             model_name="all-MiniLM-L6-v2",
             model_kwargs={"device": "cpu"},
         )
-        docs = [
-            Document(page_content=text, metadata={"source": f"guideline_{i}"})
-            for i, text in enumerate(MAINTENANCE_DOCS)
+        documents = [
+            Document(page_content=text, metadata={"source": f"{prefix}_{i}"})
+            for i, text in enumerate(docs)
         ]
-        self.vectorstore = FAISS.from_documents(docs, self.embeddings)
+        self.vectorstore = FAISS.from_documents(documents, self.embeddings)
 
     def retrieve(self, query: str, k: int = 3) -> list[str]:
         results = self.vectorstore.similarity_search(query, k=k)
@@ -219,8 +351,16 @@ class MaintenanceRAG:
 
 
 def get_rag() -> MaintenanceRAG:
-    """Singleton accessor so the vector store is built only once."""
-    global _rag_instance
-    if _rag_instance is None:
-        _rag_instance = MaintenanceRAG()
-    return _rag_instance
+    """Singleton accessor for maintenance guidelines RAG."""
+    global _maintenance_rag
+    if _maintenance_rag is None:
+        _maintenance_rag = MaintenanceRAG(MAINTENANCE_DOCS, prefix="guideline")
+    return _maintenance_rag
+
+
+def get_modifier_rag() -> MaintenanceRAG:
+    """Singleton accessor for risk modifier RAG."""
+    global _modifier_rag
+    if _modifier_rag is None:
+        _modifier_rag = MaintenanceRAG(RISK_MODIFIER_DOCS, prefix="modifier")
+    return _modifier_rag
